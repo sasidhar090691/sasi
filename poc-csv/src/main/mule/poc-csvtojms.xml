@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<file:config name="File_Config" doc:name="File Config" doc:id="c84082d3-8541-476f-bc69-4e1fe688b8dc" >
+		<file:connection />
+	</file:config>
+	<jms:config name="JMS_Config" doc:name="JMS Config" doc:id="4402ad47-5b1a-4f44-9438-519f0d1e1d30" >
+		<jms:active-mq-connection >
+			<jms:factory-configuration brokerUrl="tcp://localhost:61616" />
+		</jms:active-mq-connection>
+	</jms:config>
+	<flow name="poc-csvtojmsFlow" doc:id="dda2d749-2050-4515-8a53-f37549b83901" >
+		<file:listener doc:id="ca5dda4d-6937-4396-ba12-acd5f1371944" config-ref="File_Config" directory="C:\Users\anant\Desktop\Target" recursive="false" moveToDirectory="C:\Users\anant\Desktop\Target\archive" renameTo='archive.csv'>
+			<scheduling-strategy >
+				<fixed-frequency />
+			</scheduling-strategy>
+		</file:listener>
+		<logger level="INFO" doc:name="Logger" doc:id="00caeded-f9f7-46a7-b996-752befbeef7d" message="#[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="0819864d-ab09-443b-b7db-5ed03c80112f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map{
+	"Name":$.name,
+	"Age":$.age,
+	 "Salary": $.id
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<foreach doc:name="For Each" doc:id="106b96aa-bba7-42ab-94e8-2456c57674d7" >
+			<jms:publish doc:name="Publish" doc:id="365375b8-0839-49be-ac1a-2198eeb6c518" config-ref="JMS_Config" destination="result-queue"/>
+		</foreach>
+	</flow>
+	<flow name="poc-csvtojmsFlow1" doc:id="c783d002-e287-45a6-ab2c-f0fe3b7607b1" >
+		<jms:listener doc:name="Listener" doc:id="1db051d2-26c3-420c-89e0-50dd5b428a15" config-ref="JMS_Config" destination="result-queue">
+			<jms:consumer-type >
+				<jms:queue-consumer />
+			</jms:consumer-type>
+		</jms:listener>
+		<logger level="INFO" doc:name="Logger" doc:id="0e97eee4-ee54-4e1f-bef1-a036f1086438" message="stated --------"/>
+		<logger level="INFO" doc:name="Logger" doc:id="1da6f658-594a-4883-950c-cab31beb8c6d" message="#[payload]"/>
+	</flow>
+</mule>
