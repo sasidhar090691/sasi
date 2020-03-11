@@ -34,6 +34,7 @@ payload map{
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
+		<logger level="INFO" doc:name="new logger" doc:id="0b846973-a899-436c-9e78-06578eb249d9" message="#[payload]"/>
 		<foreach doc:name="For Each" doc:id="106b96aa-bba7-42ab-94e8-2456c57674d7" >
 			<jms:publish doc:name="Publish" doc:id="365375b8-0839-49be-ac1a-2198eeb6c518" config-ref="JMS_Config" destination="result-queue"/>
 		</foreach>
